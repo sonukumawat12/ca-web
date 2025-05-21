@@ -1,0 +1,17 @@
+User-agent: *
+Allow: /
+Allow: /about
+Allow: /services
+Allow: /contact
+Allow: /blog
+Allow: /resources
+Disallow: /admin
+Disallow: /login
+Disallow: /register
+Disallow: /dashboard
+
+# Sitemaps
+Sitemap: https://yourdomain.com/sitemap.xml
+
+# Crawl-delay
+Crawl-delay: 10
