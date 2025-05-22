@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use App\Http\Controllers\BlogController;
 
 /*
 |--------------------------------------------------------------------------
@@ -44,10 +45,15 @@ Route::get('dashboard', function () {
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/dashboard/blogs', function () {
-        return Inertia::render('dashboard/BlogManagement');
-    })->name('dashboard.blogs');
+    Route::get('/dashboard/blogs', [BlogController::class,'index'])->name('dashboard.blogs');
+    Route::post('/blogs', [BlogController::class, 'store'])->name('blogs.store');
+    Route::put('/blogs/{blog}', [BlogController::class, 'update'])->name('blogs.update');
+    Route::delete('/blogs/{blog}', [BlogController::class, 'destroy'])->name('blogs.destroy');
+    Route::put('/blogs/{blog}/schedule', [BlogController::class, 'schedule'])->name('blogs.schedule');
 });
 
+   // Route::get('/dashboard/blogs', function () {
+    //     return Inertia::render('dashboard/BlogManagement');
+    // }
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';

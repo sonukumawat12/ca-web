@@ -16,7 +16,7 @@ const services = [
       'Tax Compliance Review',
       'Tax Advisory Services'
     ],
-    image: '/images/tax.jpg'
+    image: '/images/1.jpg'
   },
   {
     title: 'GST Services',
@@ -30,7 +30,7 @@ const services = [
       'Input Tax Credit Analysis',
       'GST Refund Processing'
     ],
-    image: '/images/gst.jpg'
+    image: '/images/2.jpg'
   },
   {
     title: 'Business Setup',
@@ -44,7 +44,7 @@ const services = [
       'Trademark Registration',
       'Business Advisory'
     ],
-    image: '/images/business.jpg'
+    image: '/images/3.jpg'
   },
   {
     title: 'Audit & Assurance',
@@ -58,7 +58,7 @@ const services = [
       'Compliance Review',
       'Risk Assessment'
     ],
-    image: '/images/audit.jpg'
+    image: '/images/4.jpg'
   },
   {
     title: 'Financial Advisory',
@@ -72,7 +72,7 @@ const services = [
       'Fund Raising',
       'Business Restructuring'
     ],
-    image: '/images/finance.jpg'
+    image: '/images/5.jpg'
   },
   {
     title: 'Compliance Services',
@@ -86,7 +86,7 @@ const services = [
       'Compliance Monitoring',
       'Policy Development'
     ],
-    image: '/images/compliance.jpg'
+    image: '/images/6.jpg'
   }
 ];
 

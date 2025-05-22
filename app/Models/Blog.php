@@ -19,13 +19,15 @@ class Blog extends Model
         'image',
         'tags',
         'is_published',
-        'published_at'
+        'published_at',
+        'scheduled_at'
     ];
 
     protected $casts = [
         'tags' => 'array',
         'is_published' => 'boolean',
-        'published_at' => 'datetime'
+        'published_at' => 'datetime:Y-m-d H:i:s',
+        'scheduled_at' => 'datetime:Y-m-d H:i:s'
     ];
 
     public function user()

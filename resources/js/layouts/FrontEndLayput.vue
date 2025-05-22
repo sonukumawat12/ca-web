@@ -26,7 +26,7 @@ const menuItems = [
     >
       <v-list>
         <v-list-item
-          prepend-avatar="/images/ca.png"
+          prepend-avatar="/images/logo.png"
           title="CA Solutions"
           subtitle="Expert Services"
           class="mb-4"
@@ -56,20 +56,14 @@ const menuItems = [
       elevation="1"
     >
       <template v-slot:prepend>
-        <v-app-bar-nav-icon
-          class="hidden-md-and-up"
-          @click="drawer = !drawer"
-        ></v-app-bar-nav-icon>
-
         <div class="d-flex align-center">
           <Link :href="route('home')" class="text-decoration-none">
-            <!-- <v-img src="/images/logo.png" alt="logo" class="navbar-logo" contain></v-img>/ -->
             <img src="/images/logo.png" alt="logo" class="navbar-logo" contain>
           </Link>
         </div>
       </template>
 
-      <!-- Desktop Navigation Menu -->
+      <!-- Desktop Navigation Menu and Hamburger Icon -->
       <template v-slot:append>
         <div class="hidden-sm-and-down">
           <Link
@@ -95,6 +89,11 @@ const menuItems = [
             <v-icon end icon="mdi-arrow-right" class="ml-1"></v-icon>
           </v-btn>
         </div>
+        <!-- Hamburger menu icon for mobile on the right -->
+        <v-app-bar-nav-icon
+          class="hidden-md-and-up"
+          @click="drawer = !drawer"
+        ></v-app-bar-nav-icon>
       </template>
     </v-app-bar>
 
@@ -102,7 +101,7 @@ const menuItems = [
       <slot />
     </v-main>
 
-    <FloatingWhatsapp />
+    <!-- <FloatingWhatsapp /> -->
   </v-app>
 </template>
 

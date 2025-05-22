@@ -4,6 +4,7 @@ Allow: /about
 Allow: /services
 Allow: /contact
 Allow: /blog
+Allow: /pricing
 Allow: /resources
 Disallow: /admin
 Disallow: /login
@@ -11,7 +12,9 @@ Disallow: /register
 Disallow: /dashboard
 
 # Sitemaps
-Sitemap: https://yourdomain.com/sitemap.xml
+Sitemap: https://www.example.com/sitemap.xml
 
 # Crawl-delay
 Crawl-delay: 10
+
+# Updated for SEO: Make sure to replace example.com with your real domain after deployment.

@@ -19,6 +19,7 @@ return new class extends Migration
             $table->text('excerpt');
             $table->text('content');
             $table->string('category');
+            $table->string('scheduled_at')->nullable();
             $table->string('image')->nullable();
             $table->json('tags')->nullable();
             $table->boolean('is_published')->default(false);

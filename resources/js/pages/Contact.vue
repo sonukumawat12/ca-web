@@ -111,7 +111,7 @@ onMounted(() => {
       title="Contact Us"
       subtitle="Get in touch with our team of experts"
       badge="Let's Connect"
-      background-image="https://picsum.photos/seed/contact/1920/1080"
+      background-image="/images/contact.jpg"
     />
 
     <!-- Contact Info Section -->
@@ -225,7 +225,7 @@ onMounted(() => {
             </form>
           </div>
           <div class="contact-form-image">
-            <img src="https://picsum.photos/seed/contact/800/1000" alt="Contact Us" />
+            <img src="/images/contact.jpg" alt="Contact Us" />
           </div>
         </div>
       </v-container>

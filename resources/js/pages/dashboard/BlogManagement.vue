@@ -1,597 +1,648 @@
-<script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { useForm } from '@inertiajs/vue3';
-import AppLayout from '@/layouts/AppLayout.vue';
-import axios from 'axios';
+<template>
+  <AppLayout>
+    <v-container fluid class="pa-6">
+      <!-- Header Section -->
+      <div class="d-flex align-center justify-space-between mb-6">
+        <div>
+          <h1 class="text-h4 font-weight-bold primary--text mb-2">Blog Management</h1>
+          <p class="text-subtitle-1 text-medium-emphasis">Manage and organize your blog content</p>
+        </div>
+        <v-btn
+          color="primary"
+          elevation="2"
+          prepend-icon="mdi-plus"
+          size="large"
+          @click="openDialog()"
+        >
+          Create New Blog
+        </v-btn>
+      </div>
 
-interface Blog {
-  id: number;
-  title: string;
-  excerpt: string;
-  content: string;
-  category: string;
-  image: string | null;
-  tags: string[];
-  is_published: boolean;
-  published_at: string | null;
-}
+      <!-- Filters Section -->
+      <v-card class="mb-6 rounded-lg" elevation="2">
+        <v-card-text class="pa-4">
+          <v-row>
+            <v-col cols="12" md="3">
+              <v-text-field
+                v-model="filters.search"
+                label="Search blogs"
+                prepend-inner-icon="mdi-magnify"
+                variant="outlined"
+                density="comfortable"
+                hide-details
+                @input="applyFilters"
+              />
+            </v-col>
+            <v-col cols="12" md="3">
+              <v-select
+                v-model="filters.category"
+                :items="categories"
+                label="Category"
+                variant="outlined"
+                density="comfortable"
+                hide-details
+                @update:model-value="applyFilters"
+              />
+            </v-col>
+            <v-col cols="12" md="3">
+              <v-select
+                v-model="filters.status"
+                :items="statusOptions"
+                label="Status"
+                variant="outlined"
+                density="comfortable"
+                hide-details
+                @update:model-value="applyFilters"
+              />
+            </v-col>
+            <v-col cols="12" md="3">
+              <v-menu
+                v-model="dateMenu"
+                :close-on-content-click="false"
+                transition="scale-transition"
+              >
+                <template v-slot:activator="{ props }">
+                  <v-text-field
+                    v-bind="props"
+                    v-model="filters.dateRange"
+                    label="Date Range"
+                    prepend-inner-icon="mdi-calendar"
+                    variant="outlined"
+                    density="comfortable"
+                    hide-details
+                    readonly
+                  />
+                </template>
+                <v-date-picker
+                  v-model="filters.dateRange"
+                  range
+                  @update:model-value="applyFilters"
+                />
+              </v-menu>
+            </v-col>
+          </v-row>
+        </v-card-text>
+      </v-card>
 
-const blogs = ref<Blog[]>([]);
-const showCreateModal = ref(false);
-const showEditModal = ref(false);
-const selectedBlog = ref<Blog | null>(null);
-const isLoading = ref(false);
-const showNotification = ref(false);
-const notificationMessage = ref('');
-const notificationType = ref<'success' | 'error'>('success');
+      <!-- Main Content Card -->
+      <v-card class="rounded-lg" elevation="2">
+        <v-card-text class="pa-6">
+          <v-data-table
+            :headers="headers"
+            :items="filteredBlogs"
+            :items-per-page="10"
+            class="elevation-0"
+            :footer-props="{
+              'items-per-page-options': [5, 10, 20, 50],
+              'items-per-page-text': 'Rows per page'
+            }"
+          >
+            <!-- Title Column -->
+            <template #item.title="{ item }">
+              <div class="d-flex align-center">
+                <v-avatar size="40" class="mr-3">
+                  <v-img :src="item.image || '/default-blog.jpg'" cover></v-img>
+                </v-avatar>
+                <div>
+                  <div class="font-weight-medium">{{ item.title }}</div>
+                  <div class="text-caption text-medium-emphasis">{{ item.category }}</div>
+                </div>
+              </div>
+            </template>
+
+            <!-- Status Column -->
+            <template #item.is_published="{ item }">
+              <v-chip
+                :color="getStatusColor(item)"
+                size="small"
+                class="font-weight-medium"
+                :class="getStatusTextClass(item)"
+                variant="tonal"
+              >
+                <v-icon start size="small" :icon="getStatusIcon(item)"></v-icon>
+                {{ getStatusText(item) }}
+              </v-chip>
+            </template>
+
+            <!-- Published Date Column -->
+            <template #item.published_at="{ item }">
+              <div class="d-flex align-center">
+                <v-icon size="small" class="mr-1 text-medium-emphasis">mdi-calendar</v-icon>
+                <span class="text-medium-emphasis">{{ formatDate(item.published_at) }}</span>
+              </div>
+            </template>
+
+            <!-- Actions Column -->
+            <template #item.actions="{ item }">
+              <v-menu location="bottom end">
+                <template v-slot:activator="{ props }">
+                  <v-btn
+                    icon
+                    variant="text"
+                    v-bind="props"
+                  >
+                    <v-icon>mdi-dots-vertical</v-icon>
+                  </v-btn>
+                </template>
+                <v-list>
+                  <v-list-item @click="editBlog(item)">
+                    <template v-slot:prepend>
+                      <v-icon>mdi-pencil</v-icon>
+                    </template>
+                    <v-list-item-title>Edit</v-list-item-title>
+                  </v-list-item>
+                  <v-list-item @click="scheduleBlog(item)">
+                    <template v-slot:prepend>
+                      <v-icon>mdi-clock-outline</v-icon>
+                    </template>
+                    <v-list-item-title>Schedule</v-list-item-title>
+                  </v-list-item>
+                  <v-list-item @click="deleteBlog(item)">
+                    <template v-slot:prepend>
+                      <v-icon color="error">mdi-delete</v-icon>
+                    </template>
+                    <v-list-item-title class="text-error">Delete</v-list-item-title>
+                  </v-list-item>
+                </v-list>
+              </v-menu>
+            </template>
+
+            <!-- No Data Template -->
+            <template #no-data>
+              <v-container class="fill-height">
+                <v-row align="center" justify="center">
+                  <v-col cols="12" sm="8" md="6" lg="4" class="text-center">
+                    <v-icon size="64" color="grey-lighten-1" class="mb-4">mdi-file-document-outline</v-icon>
+                    <h3 class="text-h6 mb-2">No Blog Posts Found</h3>
+                    <p class="text-body-2 text-medium-emphasis mb-4">Try adjusting your filters or create a new blog post</p>
+                    <v-btn color="primary" @click="openDialog()">Create New Blog</v-btn>
+                  </v-col>
+                </v-row>
+              </v-container>
+            </template>
+          </v-data-table>
+        </v-card-text>
+      </v-card>
+
+      <!-- Create/Edit Blog Dialog -->
+      <v-dialog v-model="dialog" max-width="900px" persistent>
+        <v-card class="rounded-lg">
+          <v-card-title class="pa-6 pb-4 d-flex align-center">
+            <span class="text-h5 font-weight-bold">{{ isEditing ? 'Edit Blog' : 'Create New Blog' }}</span>
+            <v-spacer />
+            <v-btn icon @click="closeDialog">
+              <v-icon>mdi-close</v-icon>
+            </v-btn>
+          </v-card-title>
+
+          <v-card-text class="pa-6">
+            <v-form ref="formRef" @submit.prevent="submitBlog">
+              <v-row>
+                <v-col cols="12" md="8">
+                  <v-text-field
+                    v-model="form.title"
+                    label="Blog Title"
+                    variant="outlined"
+                    density="comfortable"
+                    :rules="[v => !!v || 'Title is required']"
+                    required
+                  />
+                </v-col>
+                <v-col cols="12" md="4">
+                  <v-text-field
+                    v-model="form.category"
+                    label="Category"
+                    variant="outlined"
+                    density="comfortable"
+                    :rules="[v => !!v || 'Category is required']"
+                    required
+                  />
+                </v-col>
+              </v-row>
+
+              <v-row>
+                <v-col cols="12">
+                  <v-textarea
+                    v-model="form.content"
+                    label="Content"
+                    variant="outlined"
+                    rows="6"
+                    auto-grow
+                    :rules="[v => !!v || 'Content is required']"
+                    required
+                  />
+                </v-col>
+              </v-row>
+
+              <v-row>
+                <v-col cols="12" md="6">
+                  <v-file-input
+                    v-model="form.image"
+                    label="Featured Image"
+                    variant="outlined"
+                    density="comfortable"
+                    accept="image/*"
+                    prepend-icon="mdi-camera"
+                    show-size
+                    :rules="[v => !v || v.size < 5000000 || 'Image size should be less than 5 MB']"
+                  />
+                </v-col>
+                <v-col cols="12" md="6">
+                  <v-card variant="outlined" class="pa-4">
+                    <div class="text-subtitle-1 font-weight-medium mb-2">Publication Settings</div>
+                    <v-switch
+                      v-model="form.is_published"
+                      color="success"
+                      label="Publish immediately"
+                      hide-details
+                      class="mb-4"
+                    />
+                    <v-menu
+                      v-if="!form.is_published"
+                      v-model="scheduleMenu"
+                      :close-on-content-click="false"
+                      transition="scale-transition"
+                    >
+                      <template v-slot:activator="{ props }">
+                        <v-text-field
+                          v-bind="props"
+                          v-model="form.scheduled_at"
+                          label="Schedule Publication"
+                          prepend-inner-icon="mdi-clock-outline"
+                          variant="outlined"
+                          density="comfortable"
+                          readonly
+                        />
+                      </template>
+                      <v-date-picker
+                        v-model="form.scheduled_at"
+                        :min="new Date().toISOString().substr(0, 10)"
+                      />
+                    </v-menu>
+                  </v-card>
+                </v-col>
+              </v-row>
+            </v-form>
+          </v-card-text>
+
+          <v-divider></v-divider>
+
+          <v-card-actions class="pa-6">
+            <v-spacer />
+            <v-btn
+              variant="outlined"
+              color="grey-darken-1"
+              @click="closeDialog"
+            >
+              Cancel
+            </v-btn>
+            <v-btn
+              color="primary"
+              @click="submitBlog"
+              :loading="loading"
+              class="ml-4"
+            >
+              {{ isEditing ? 'Update Blog' : 'Create Blog' }}
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
+      <!-- Schedule Dialog -->
+      <v-dialog v-model="scheduleDialog" max-width="500px">
+        <v-card class="rounded-lg">
+          <v-card-title class="pa-6 pb-4">
+            <span class="text-h5 font-weight-bold">Schedule Blog Post</span>
+          </v-card-title>
+
+          <v-card-text class="pa-6">
+            <v-form ref="scheduleFormRef">
+              <v-menu
+                v-model="scheduleDateMenu"
+                :close-on-content-click="false"
+                transition="scale-transition"
+              >
+                <template v-slot:activator="{ props }">
+                  <v-text-field
+                    v-bind="props"
+                    v-model="scheduleForm.date"
+                    label="Publication Date"
+                    prepend-inner-icon="mdi-calendar"
+                    variant="outlined"
+                    density="comfortable"
+                    :rules="[v => !!v || 'Date is required']"
+                    required
+                    readonly
+                  />
+                </template>
+                <v-date-picker
+                  v-model="scheduleForm.date"
+                  :min="new Date().toISOString().substr(0, 10)"
+                />
+              </v-menu>
+
+              <v-text-field
+                v-model="scheduleForm.time"
+                label="Publication Time"
+                type="time"
+                variant="outlined"
+                density="comfortable"
+                :rules="[v => !!v || 'Time is required']"
+                required
+                class="mt-4"
+              />
+            </v-form>
+          </v-card-text>
+
+          <v-divider></v-divider>
+
+          <v-card-actions class="pa-6">
+            <v-spacer />
+            <v-btn
+              variant="outlined"
+              color="grey-darken-1"
+              @click="scheduleDialog = false"
+            >
+              Cancel
+            </v-btn>
+            <v-btn
+              color="primary"
+              @click="submitSchedule"
+              :loading="loading"
+              class="ml-4"
+            >
+              Schedule
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+    </v-container>
+  </AppLayout>
+</template>
+
+<script setup>
+import { ref, computed } from 'vue'
+import { usePage, useForm } from '@inertiajs/vue3'
+import AppLayout from '@/layouts/AppLayout.vue'
+import { router } from '@inertiajs/vue3'
+import axios from 'axios'
+
+const blogs = ref([
+  {
+    id: 1,
+    title: 'Getting Started with Vue.js 3',
+    category: 'Web Development',
+    is_published: true,
+    published_at: '2024-03-15',
+    content: 'Learn the basics of Vue.js 3 and its composition API...',
+    image: 'https://picsum.photos/200/200?random=1'
+  },
+  {
+    id: 2,
+    title: 'Advanced CSS Techniques',
+    category: 'Frontend',
+    is_published: true,
+    published_at: '2024-03-14',
+    content: 'Explore modern CSS features and best practices...',
+    image: 'https://picsum.photos/200/200?random=2'
+  },
+  {
+    id: 3,
+    title: 'Building REST APIs with Laravel',
+    category: 'Backend',
+    is_published: false,
+    published_at: null,
+    scheduled_at: '2024-03-20',
+    content: 'A comprehensive guide to creating RESTful APIs...',
+    image: 'https://picsum.photos/200/200?random=3'
+  },
+  {
+    id: 4,
+    title: 'State Management in Vue',
+    category: 'Web Development',
+    is_published: true,
+    published_at: '2024-03-13',
+    content: 'Understanding Vuex and Pinia for state management...',
+    image: 'https://picsum.photos/200/200?random=4'
+  },
+  {
+    id: 5,
+    title: 'Responsive Design Patterns',
+    category: 'UI/UX',
+    is_published: true,
+    published_at: '2024-03-12',
+    content: 'Best practices for creating responsive layouts...',
+    image: 'https://picsum.photos/200/200?random=5'
+  }
+])
+
+const user = computed(() => usePage().props.user)
+
+const dialog = ref(false)
+const scheduleDialog = ref(false)
+const formRef = ref(null)
+const scheduleFormRef = ref(null)
+const loading = ref(false)
+const isEditing = ref(false)
+const dateMenu = ref(false)
+const scheduleMenu = ref(false)
+const scheduleDateMenu = ref(false)
+
+const categories = ['Web Development', 'Frontend', 'Backend', 'UI/UX']
+const statusOptions = [
+  { title: 'All', value: 'all' },
+  { title: 'Published', value: 'published' },
+  { title: 'Draft', value: 'draft' },
+  { title: 'Scheduled', value: 'scheduled' }
+]
+
+const filters = ref({
+  search: '',
+  category: '',
+  status: 'all',
+  dateRange: []
+})
 
 const form = useForm({
   title: '',
-  excerpt: '',
-  content: '',
   category: '',
-  image: null as File | null,
-  tags: [] as string[],
-  is_published: false
-});
+  is_published: false,
+  image: null,
+  content: '',
+  scheduled_at: null
+})
 
-const categories = [
-  'Taxation',
-  'Tax Planning',
-  'Technology',
-  'Startup',
-  'Audit',
-  'Finance'
-];
+const scheduleForm = ref({
+  date: '',
+  time: ''
+})
 
-const showSuccessNotification = (message: string) => {
-  notificationMessage.value = message;
-  notificationType.value = 'success';
-  showNotification.value = true;
-  setTimeout(() => {
-    showNotification.value = false;
-  }, 3000);
-};
+const headers = [
+  { text: 'Blog Post', value: 'title', sortable: false },
+  { text: 'Status', value: 'is_published', align: 'center' },
+  { text: 'Published Date', value: 'published_at', align: 'center' },
+  { text: 'Actions', value: 'actions', align: 'center', sortable: false },
+]
 
-const showErrorNotification = (message: string) => {
-  notificationMessage.value = message;
-  notificationType.value = 'error';
-  showNotification.value = true;
-  setTimeout(() => {
-    showNotification.value = false;
-  }, 3000);
-};
+const filteredBlogs = computed(() => {
+  return blogs.value.filter(blog => {
+    const matchesSearch = blog.title.toLowerCase().includes(filters.value.search.toLowerCase()) ||
+                         blog.content.toLowerCase().includes(filters.value.search.toLowerCase())
+    const matchesCategory = !filters.value.category || blog.category === filters.value.category
+    const matchesStatus = filters.value.status === 'all' ||
+                         (filters.value.status === 'published' && blog.is_published) ||
+                         (filters.value.status === 'draft' && !blog.is_published && !blog.scheduled_at) ||
+                         (filters.value.status === 'scheduled' && blog.scheduled_at)
+    const matchesDate = !filters.value.dateRange.length ||
+                       (blog.published_at && new Date(blog.published_at) >= new Date(filters.value.dateRange[0]) &&
+                        new Date(blog.published_at) <= new Date(filters.value.dateRange[1]))
+    return matchesSearch && matchesCategory && matchesStatus && matchesDate
+  })
+})
 
-const validateForm = () => {
-  if (!form.title.trim()) {
-    showErrorNotification('Title is required');
-    return false;
+function getStatusColor(item) {
+  if (item.scheduled_at) return 'info'
+  return item.is_published ? 'success' : 'warning'
+}
+
+function getStatusTextClass(item) {
+  if (item.scheduled_at) return 'info--text'
+  return item.is_published ? 'success--text' : 'warning--text'
+}
+
+function getStatusIcon(item) {
+  if (item.scheduled_at) return 'mdi-clock-outline'
+  return item.is_published ? 'mdi-check-circle' : 'mdi-clock-outline'
+}
+
+function getStatusText(item) {
+  if (item.scheduled_at) return 'Scheduled'
+  return item.is_published ? 'Published' : 'Draft'
+}
+
+function formatDate(date) {
+  if (!date) return '-'
+  return new Date(date).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  })
+}
+
+function openDialog() {
+  isEditing.value = false
+  resetForm()
+  dialog.value = true
+}
+
+function closeDialog() {
+  dialog.value = false
+  resetForm()
+}
+
+function resetForm() {
+  form.value = {
+    title: '',
+    category: '',
+    is_published: false,
+    image: null,
+    content: '',
+    scheduled_at: null
   }
-  if (!form.excerpt.trim()) {
-    showErrorNotification('Excerpt is required');
-    return false;
-  }
-  if (!form.content.trim()) {
-    showErrorNotification('Content is required');
-    return false;
-  }
-  if (!form.category) {
-    showErrorNotification('Please select a category');
-    return false;
-  }
-  return true;
-};
+  isEditing.value = false
+}
 
-const fetchBlogs = async () => {
-  try {
-    const response = await axios.get('/api/blogs');
-    blogs.value = response.data.data;
-  } catch (error) {
-    console.error('Failed to fetch blogs:', error);
-    showErrorNotification('Failed to fetch blogs');
-  }
-};
+function editBlog(item) {
+  isEditing.value = true
+  form.value = { ...item }
+  dialog.value = true
+}
 
-const handleImageUpload = (event: Event) => {
-  const target = event.target as HTMLInputElement;
-  if (target.files && target.files[0]) {
-    const file = target.files[0];
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      showErrorNotification('Image size should be less than 5MB');
-      return;
+function scheduleBlog(item) {
+  scheduleForm.value = {
+    date: '',
+    time: ''
+  }
+  scheduleDialog.value = true
+}
+
+function deleteBlog(item) {
+  if (confirm('Are you sure you want to delete this blog post?')) {
+    router.delete(`/blogs/${item.id}`)
+  }
+}
+
+function applyFilters() {
+  // Filters are automatically applied through the computed property
+}
+
+function submitBlog() {
+  // Create form data
+  const formData = new FormData()
+  formData.append('title', form.title)
+  formData.append('content', form.content)
+  formData.append('category', form.category)
+  formData.append('is_published', form.is_published ? 1 : 0)
+  formData.append('user_id', user.value.id)
+  formData.append('scheduled_at', form.scheduled_at)
+    
+  
+  // Send POST request
+  axios.post('/blogs', formData)
+      .then(response => {
+          // Close dialog after successful submission
+          closeDialog()
+          // Refresh the page to show new blog
+          window.location.reload()
+      })
+      .catch(error => {
+          console.error('Error:', error)
+      })
+}
+
+function submitSchedule() {
+  if (!scheduleFormRef.value.validate()) return
+
+  loading.value = true
+  const scheduledDateTime = `${scheduleForm.value.date}T${scheduleForm.value.time}`
+  
+  router.put(`/blogs/${form.value.id}/schedule`, {
+    scheduled_at: scheduledDateTime
+  }, {
+    onSuccess: () => {
+      scheduleDialog.value = false
+    },
+    onFinish: () => {
+      loading.value = false
     }
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      showErrorNotification('Please upload an image file');
-      return;
-    }
-    form.image = file;
-  }
-};
-
-const createBlog = async () => {
-  if (!validateForm()) return;
-
-  isLoading.value = true;
-  try {
-    const formData = new FormData();
-    Object.entries(form).forEach(([key, value]) => {
-      if (key === 'tags') {
-        formData.append(key, JSON.stringify(value));
-      } else if (value !== null) {
-        formData.append(key, value);
-      }
-    });
-
-    await axios.post('/api/blogs', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    });
-
-    showCreateModal.value = false;
-    form.reset();
-    fetchBlogs();
-    showSuccessNotification('Blog post created successfully');
-  } catch (error) {
-    console.error('Failed to create blog:', error);
-    showErrorNotification('Failed to create blog post');
-  } finally {
-    isLoading.value = false;
-  }
-};
-
-const editBlog = async () => {
-  if (!selectedBlog.value) return;
-
-  try {
-    const formData = new FormData();
-    Object.entries(form).forEach(([key, value]) => {
-      if (key === 'tags') {
-        formData.append(key, JSON.stringify(value));
-      } else if (value !== null) {
-        formData.append(key, value);
-      }
-    });
-
-    await axios.post(`/api/blogs/${selectedBlog.value.id}`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    });
-
-    showEditModal.value = false;
-    form.reset();
-    fetchBlogs();
-  } catch (error) {
-    console.error('Failed to update blog:', error);
-  }
-};
-
-const deleteBlog = async (blog: Blog) => {
-  if (!confirm('Are you sure you want to delete this blog?')) return;
-
-  try {
-    await axios.delete(`/api/blogs/${blog.id}`);
-    fetchBlogs();
-  } catch (error) {
-    console.error('Failed to delete blog:', error);
-  }
-};
-
-const openEditModal = (blog: Blog) => {
-  selectedBlog.value = blog;
-  form.title = blog.title;
-  form.excerpt = blog.excerpt;
-  form.content = blog.content;
-  form.category = blog.category;
-  form.tags = blog.tags || [];
-  form.is_published = !!blog.is_published;
-  showEditModal.value = true;
-};
-
-onMounted(() => {
-  fetchBlogs();
-});
+  })
+}
 </script>
 
-<template>
-  <AppLayout>
-    <template #header>
-      <div class="flex items-center justify-between mb-8">
-        <div>
-          <h2 class="text-3xl font-bold text-gray-900">Blog Management</h2>
-          <p class="mt-1 text-sm text-gray-500">Create and manage your blog content</p>
-        </div>
-        <button
-          @click="showCreateModal = true"
-          class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg shadow-lg hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 transform hover:scale-105"
-        >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path d="M12 4v16m8-8H4"/>
-          </svg>
-          Create New Post
-        </button>
-      </div>
-    </template>
+<style scoped>
+.v-data-table {
+  font-size: 14px;
+}
 
-    <!-- Notification -->
-    <div
-      v-if="showNotification"
-      :class="[
-        'fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg transform transition-all duration-300',
-        notificationType === 'success' ? 'bg-green-500' : 'bg-red-500',
-        'text-white'
-      ]"
-    >
-      {{ notificationMessage }}
-    </div>
+.v-card {
+  transition: all 0.3s ease;
+}
 
-    <div class="py-12">
-      <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
-        <div class="overflow-hidden bg-white shadow-xl sm:rounded-2xl">
-          <div class="p-8">
-            <!-- Blog List -->
-            <div class="overflow-x-auto">
-              <table class="min-w-full divide-y divide-gray-200">
-                <thead>
-                  <tr class="bg-gray-50">
-                    <th scope="col" class="px-6 py-4 text-xs font-semibold tracking-wider text-left text-gray-500 uppercase">
-                      Blog Post
-                    </th>
-                    <th scope="col" class="px-6 py-4 text-xs font-semibold tracking-wider text-left text-gray-500 uppercase">
-                      Category
-                    </th>
-                    <th scope="col" class="px-6 py-4 text-xs font-semibold tracking-wider text-left text-gray-500 uppercase">
-                      Status
-                    </th>
-                    <th scope="col" class="px-6 py-4 text-xs font-semibold tracking-wider text-left text-gray-500 uppercase">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                  <tr v-for="blog in blogs" :key="blog.id" class="hover:bg-gray-50 transition-colors duration-200">
-                    <td class="px-6 py-5">
-                      <div class="flex items-center gap-4">
-                        <div class="flex-shrink-0 w-12 h-12 overflow-hidden rounded-lg">
-                          <img
-                            v-if="blog.image"
-                            :src="blog.image"
-                            class="object-cover w-full h-full"
-                            alt="Blog thumbnail"
-                          />
-                          <div v-else class="flex items-center justify-center w-full h-full bg-gray-100">
-                            <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                          </div>
-                        </div>
-                        <div>
-                          <h3 class="text-sm font-medium text-gray-900">{{ blog.title }}</h3>
-                          <p class="text-sm text-gray-500 line-clamp-1">{{ blog.excerpt }}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td class="px-6 py-5">
-                      <span class="inline-flex items-center px-3 py-1 text-sm font-medium rounded-full bg-indigo-50 text-indigo-700">
-                        {{ blog.category }}
-                      </span>
-                    </td>
-                    <td class="px-6 py-5">
-                      <span
-                        :class="[
-                          blog.is_published
-                            ? 'bg-green-50 text-green-700 ring-green-600/20'
-                            : 'bg-yellow-50 text-yellow-700 ring-yellow-600/20',
-                          'inline-flex items-center px-3 py-1 text-sm font-medium rounded-full ring-1 ring-inset'
-                        ]"
-                      >
-                        {{ blog.is_published ? 'Published' : 'Draft' }}
-                      </span>
-                    </td>
-                    <td class="px-6 py-5">
-                      <div class="flex items-center gap-3">
-                        <button
-                          @click="openEditModal(blog)"
-                          class="p-2 text-gray-600 transition-colors duration-200 rounded-lg hover:bg-indigo-50 hover:text-indigo-600"
-                        >
-                          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536M9 13l6.071-6.071a2 2 0 112.828 2.828L11.828 15.828a4 4 0 01-1.414.828l-4.243 1.414 1.414-4.243a4 4 0 01.828-1.414z" />
-                          </svg>
-                        </button>
-                        <button
-                          @click="deleteBlog(blog)"
-                          class="p-2 text-gray-600 transition-colors duration-200 rounded-lg hover:bg-red-50 hover:text-red-600"
-                        >
-                          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+.v-btn {
+  text-transform: none;
+  letter-spacing: 0.5px;
+}
 
-    <!-- Create Modal -->
-    <div v-if="showCreateModal" class="fixed inset-0 z-50 overflow-y-auto">
-      <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 transition-opacity" aria-hidden="true">
-          <div class="absolute inset-0 bg-gray-900 opacity-75"></div>
-        </div>
+.v-chip {
+  text-transform: none;
+  letter-spacing: 0.5px;
+}
 
-        <div class="inline-block w-full max-w-2xl p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl">
-          <div class="flex items-center justify-between mb-6">
-            <h3 class="text-2xl font-semibold text-gray-900">Create New Blog Post</h3>
-            <button
-              @click="showCreateModal = false"
-              class="text-gray-400 hover:text-gray-500"
-              :disabled="isLoading"
-            >
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
+.v-list-item {
+  min-height: 40px;
+}
 
-          <form @submit.prevent="createBlog" class="space-y-6">
-            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
-              <div class="sm:col-span-2">
-                <label class="block text-sm font-medium text-gray-700">Title</label>
-                <input
-                  v-model="form.title"
-                  type="text"
-                  class="block w-full px-4 py-3 mt-1 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  required
-                />
-              </div>
-
-              <div class="sm:col-span-2">
-                <label class="block text-sm font-medium text-gray-700">Excerpt</label>
-                <textarea
-                  v-model="form.excerpt"
-                  class="block w-full px-4 py-3 mt-1 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  rows="3"
-                  required
-                ></textarea>
-              </div>
-
-              <div class="sm:col-span-2">
-                <label class="block text-sm font-medium text-gray-700">Content</label>
-                <textarea
-                  v-model="form.content"
-                  class="block w-full px-4 py-3 mt-1 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  rows="6"
-                  required
-                ></textarea>
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium text-gray-700">Category</label>
-                <select
-                  v-model="form.category"
-                  class="block w-full px-4 py-3 mt-1 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  required
-                >
-                  <option v-for="category in categories" :key="category" :value="category">
-                    {{ category }}
-                  </option>
-                </select>
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium text-gray-700">Image</label>
-                <div class="flex items-center justify-center w-full mt-1">
-                  <label class="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-                    <div class="flex flex-col items-center justify-center pt-5 pb-6">
-                      <svg class="w-8 h-8 mb-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                      </svg>
-                      <p class="mb-2 text-sm text-gray-500">
-                        <span class="font-semibold">Click to upload</span> or drag and drop
-                      </p>
-                    </div>
-                    <input
-                      type="file"
-                      @change="handleImageUpload"
-                      class="hidden"
-                      accept="image/*"
-                    />
-                  </label>
-                </div>
-              </div>
-
-              <div class="sm:col-span-2">
-                <label class="block text-sm font-medium text-gray-700">Tags</label>
-                <input
-                  v-model="form.tags"
-                  type="text"
-                  class="block w-full px-4 py-3 mt-1 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  placeholder="Enter tags separated by commas"
-                />
-              </div>
-
-              <div class="sm:col-span-2">
-                <label class="flex items-center">
-                  <input
-                    v-model="form.is_published"
-                    type="checkbox"
-                    class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                  />
-                  <span class="ml-2 text-sm text-gray-700">Publish immediately</span>
-                </label>
-              </div>
-            </div>
-
-            <div class="flex justify-end gap-4 mt-8">
-              <button
-                type="button"
-                @click="showCreateModal = false"
-                class="px-6 py-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                :disabled="isLoading"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                class="px-6 py-3 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-lg shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                :disabled="isLoading"
-              >
-                <span v-if="isLoading" class="flex items-center">
-                  <svg class="w-5 h-5 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Creating...
-                </span>
-                <span v-else>Create Post</span>
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-
-    <!-- Edit Modal -->
-    <div v-if="showEditModal" class="fixed inset-0 z-50 overflow-y-auto">
-      <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 transition-opacity" aria-hidden="true">
-          <div class="absolute inset-0 bg-gray-900 opacity-75"></div>
-        </div>
-
-        <div class="inline-block w-full max-w-2xl p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl">
-          <div class="flex items-center justify-between mb-6">
-            <h3 class="text-2xl font-semibold text-gray-900">Edit Blog Post</h3>
-            <button
-              @click="showEditModal = false"
-              class="text-gray-400 hover:text-gray-500"
-            >
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-
-          <form @submit.prevent="editBlog" class="space-y-6">
-            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
-              <div class="sm:col-span-2">
-                <label class="block text-sm font-medium text-gray-700">Title</label>
-                <input
-                  v-model="form.title"
-                  type="text"
-                  class="block w-full px-4 py-3 mt-1 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  required
-                />
-              </div>
-
-              <div class="sm:col-span-2">
-                <label class="block text-sm font-medium text-gray-700">Excerpt</label>
-                <textarea
-                  v-model="form.excerpt"
-                  class="block w-full px-4 py-3 mt-1 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  rows="3"
-                  required
-                ></textarea>
-              </div>
-
-              <div class="sm:col-span-2">
-                <label class="block text-sm font-medium text-gray-700">Content</label>
-                <textarea
-                  v-model="form.content"
-                  class="block w-full px-4 py-3 mt-1 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  rows="6"
-                  required
-                ></textarea>
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium text-gray-700">Category</label>
-                <select
-                  v-model="form.category"
-                  class="block w-full px-4 py-3 mt-1 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  required
-                >
-                  <option v-for="category in categories" :key="category" :value="category">
-                    {{ category }}
-                  </option>
-                </select>
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium text-gray-700">Image</label>
-                <div class="flex items-center justify-center w-full mt-1">
-                  <label class="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-                    <div v-if="!selectedBlog?.image" class="flex flex-col items-center justify-center pt-5 pb-6">
-                      <svg class="w-8 h-8 mb-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                      </svg>
-                      <p class="mb-2 text-sm text-gray-500">
-                        <span class="font-semibold">Click to upload</span> or drag and drop
-                      </p>
-                    </div>
-                    <img
-                      v-else
-                      :src="selectedBlog.image"
-                      class="object-cover w-full h-full rounded-lg"
-                      alt="Current blog image"
-                    />
-                    <input
-                      type="file"
-                      @change="handleImageUpload"
-                      class="hidden"
-                      accept="image/*"
-                    />
-                  </label>
-                </div>
-              </div>
-
-              <div class="sm:col-span-2">
-                <label class="block text-sm font-medium text-gray-700">Tags</label>
-                <input
-                  v-model="form.tags"
-                  type="text"
-                  class="block w-full px-4 py-3 mt-1 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  placeholder="Enter tags separated by commas"
-                />
-              </div>
-
-              <div class="sm:col-span-2">
-                <label class="flex items-center">
-                  <input
-                    v-model="form.is_published"
-                    type="checkbox"
-                    class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                  />
-                  <span class="ml-2 text-sm text-gray-700">Published</span>
-                </label>
-              </div>
-            </div>
-
-            <div class="flex justify-end gap-4 mt-8">
-              <button
-                type="button"
-                @click="showEditModal = false"
-                class="px-6 py-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                class="px-6 py-3 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-lg shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              >
-                Update Post
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  </AppLayout>
-</template>
+.v-list-item__prepend {
+  margin-right: 12px;
+}
+</style>
