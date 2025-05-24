@@ -24,8 +24,12 @@ return new class extends Migration
             $table->json('tags')->nullable();
             $table->boolean('is_published')->default(false);
             $table->timestamp('published_at')->nullable();
+            $table->ipAddress('ip_address')->nullable();
+            $table->unsignedBigInteger('view_count')->default(0);
+            $table->unsignedBigInteger('total_read_time')->default(0);
             $table->timestamps();
         });
+        
     }
 
     /**

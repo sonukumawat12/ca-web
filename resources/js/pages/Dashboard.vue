@@ -3,15 +3,54 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/vue3';
 import { usePage } from '@inertiajs/vue3';
+import { computed } from 'vue';
 
 const breadcrumbs: BreadcrumbItem[] = [
   { title: 'Dashboard', href: '/dashboard' },
 ];
 
 const page = usePage();
-const authUser = page.props.authUser;
-const blogs = page.props.blogs;
+const authUser = page.props.authUser as { name: string };
+const blogs = page.props.blogs as Array<{
+  id: number;
+  title: string;
+  excerpt: string;
+  category: string;
+  image?: string;
+  view_count: number;
+  total_read_time: number;
+  created_at: string;
+}>;
 
+interface Blog {
+  id: number;
+  title: string;
+  excerpt: string;
+  category: string;
+  image?: string;
+  author: string;
+  views: number;
+  readTime: string;
+  date: string;
+}
+
+const recentBlogs = computed(() => {
+  return blogs.map(blog => ({
+    id: blog.id,
+    title: blog.title,
+    excerpt: blog.excerpt,
+    category: blog.category,
+    image: blog.image || 'https://picsum.photos/seed/blog/800/600',
+    author: authUser.name,
+    views: blog.view_count || 0,
+    readTime: `${blog.total_read_time || 5} min read`,
+    date: new Date(blog.created_at).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    })
+  }));
+});
 
 const stats = [
   {
@@ -44,36 +83,6 @@ const stats = [
     change: '+15%',
     changeType: 'increase'
   },
-];
-
-const recentBlogs = [
-  {
-    title: 'Getting Started with Web Development',
-    author: 'Sarah Johnson',
-    date: '2 days ago',
-    views: 245,
-    category: 'Development',
-    readTime: '5 min read',
-    image: 'https://picsum.photos/200/100?random=1'
-  },
-  {
-    title: 'Best Practices for UI Design',
-    author: 'Mike Chen',
-    date: '4 days ago',
-    views: 189,
-    category: 'Design',
-    readTime: '8 min read',
-    image: 'https://picsum.photos/200/100?random=2'
-  },
-  {
-    title: 'SEO Tips for 2024',
-    author: 'Emma Davis',
-    date: '1 week ago',
-    views: 312,
-    category: 'Marketing',
-    readTime: '6 min read',
-    image: 'https://picsum.photos/200/100?random=3'
-  }
 ];
 
 const teamMembers = [
@@ -135,6 +144,17 @@ const recentLeads = [
     budget: '$100k+'
   }
 ];
+
+
+
+const capitalizeFirst = (str: string) => {
+  if (!str) return '';
+  return str.split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+}
+
+
 </script>
 
 <template>
@@ -145,7 +165,10 @@ const recentLeads = [
       <!-- Welcome Section with Quick Actions -->
       <v-row class="mb-8">
         <v-col cols="12" md="8">
-          <div class="text-h4 font-weight-bold mb-2">Welcome back, Admin!</div>
+          <div class="text-h4 font-weight-bold mb-2">
+          Welcome back, {{ capitalizeFirst(authUser.name) }}!
+        </div>
+
           <div class="text-subtitle-1 text-grey-darken-1">Here's what's happening with your content and team today.</div>
         </v-col>
         <v-col cols="12" md="4" class="d-flex align-center justify-end">
@@ -216,7 +239,7 @@ const recentLeads = [
         <v-col cols="12" md="6">
           <v-card elevation="0" class="rounded-lg">
             <v-card-title class="d-flex align-center pa-6 pb-2">
-              <span class="text-h6 font-weight-bold">Recent Blog Posts</span>
+              <span class="text-h6 font-weight-bold">Recent Blogs</span>
               <v-spacer></v-spacer>
               <v-btn
                 variant="text"
@@ -230,7 +253,7 @@ const recentLeads = [
             <v-list class="pa-2">
               <v-list-item
                 v-for="blog in recentBlogs"
-                :key="blog.title"
+                :key="blog.id"
                 class="mb-2 rounded-lg"
                 color="indigo-lighten-5"
               >
@@ -249,7 +272,7 @@ const recentLeads = [
                     <v-avatar size="24" color="grey-lighten-3" class="mr-2">
                       <span class="text-caption">{{ blog.author.charAt(0) }}</span>
                     </v-avatar>
-                    {{ blog.author }}
+                    {{ capitalizeFirst(blog.author) }}
                   </span>
                   <span class="mr-4 d-flex align-center">
                     <v-icon size="small" class="mr-1">mdi-eye</v-icon>

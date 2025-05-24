@@ -32,9 +32,11 @@
             }"
           >
             <!-- Image Column -->
+             
             <template v-slot:item.image="scope">
               <v-avatar size="40" class="my-2">
-                <v-img :src="scope.item.image || '/default-blog.jpg'" cover></v-img>
+                
+                <img :src="scope.item.image" />
               </v-avatar>
             </template>
 
@@ -59,10 +61,7 @@
 
             <!-- Published Date Column -->
             <template v-slot:item.published_at="scope">
-              <div class="d-flex align-center">
-                <v-icon size="small" class="mr-1 text-medium-emphasis">mdi-calendar</v-icon>
-                <span class="text-medium-emphasis">{{ formatDate(scope.item.published_at) }}</span>
-              </div>
+              <span class="text-medium-emphasis">{{ formatDate(scope.item.published_at) }}</span>
             </template>
 
             <!-- No Data Template -->
@@ -182,10 +181,22 @@
                         accept="image/*"
                         prepend-icon="mdi-camera"
                         show-size
-                        :rules="[v => !v || v.size < 5000000 || 'Image size should be less than 5 MB']"
+                        :rules="[
+                          v => !v || v.size < 5000000 || 'Image size should be less than 5 MB',
+                          v => !v || v.type.startsWith('image/') || 'File must be an image'
+                        ]"
                         class="mb-2"
                         hide-details="auto"
+                        @change="handleImageUpload"
                       />
+                      <div v-if="imagePreview" class="mt-4">
+                        <v-img
+                          :src="imagePreview"
+                          max-height="200"
+                          cover
+                          class="rounded-lg"
+                        ></v-img>
+                      </div>
                       <div class="text-caption text-medium-emphasis mt-2">
                         <v-icon size="small" class="mr-1">mdi-information</v-icon>
                         Recommended size: 1200x630 pixels. Max file size: 5MB
@@ -280,26 +291,48 @@ import { ref, computed } from 'vue'
 import { usePage, router } from '@inertiajs/vue3'
 import AppLayout from '@/layouts/AppLayout.vue'
 import axios from 'axios'
+import type { DataTableHeader } from 'vuetify'
+
+interface User {
+  id: number
+  name: string
+}
 
 interface BlogItem {
+  id?: number
   title: string
   category: string
   image?: string
   is_published: boolean
   scheduled_at?: string
   published_at?: string
+  content: string
+  slug?: string
+  excerpt?: string
 }
 
-const user = computed(() => usePage().props.user)
-const categories = computed(() => usePage().props.categories)
-const blogs = computed(() => usePage().props.blogs)
+interface FormData {
+  title: string
+  category: string
+  is_published: boolean
+  image: File | null
+  content: string
+  scheduled_at: string | null
+}
+
+const user = computed<User>(() => usePage().props.user as User)
+const categories = computed<string[]>(() => usePage().props.categories as string[])
+const blogs = computed<BlogItem[]>(() => usePage().props.blogs as BlogItem[])
 const filteredBlogs = computed(() => blogs.value || [])
 
 const dialog = ref(false)
 const loading = ref(false)
-const formRef = ref(null)
+const formRef = ref<{ validate: () => boolean } | null>(null)
 const scheduleMenu = ref(false)
-const form = ref({
+const isEditing = ref(false)
+const imagePreview = ref<string | null>(null)
+
+const form = ref<FormData>({
   title: '',
   category: '',
   is_published: false,
@@ -308,7 +341,7 @@ const form = ref({
   scheduled_at: null
 })
 
-const headers = [
+const headers = ref<readonly DataTableHeader[]>([
   {
     title: 'Image',
     key: 'image',
@@ -317,7 +350,7 @@ const headers = [
     align: 'center'
   },
   {
-    title: 'Blog Post',
+    title: 'Title',
     key: 'title',
     value: 'title',
     sortable: false,
@@ -327,6 +360,13 @@ const headers = [
     title: 'Category',
     key: 'category',
     value: 'category',
+    align: 'center',
+    sortable: true
+  },
+  {
+    title: 'excerpt',
+    key: 'excerpt',
+    value: 'excerpt',
     align: 'center',
     sortable: true
   },
@@ -345,13 +385,27 @@ const headers = [
     sortable: true
   },
   {
+    title: 'Read Time',
+    key: 'total_read_time',
+    value: 'total_read_time',
+    align: 'center',
+    sortable: true
+  },
+  {
+    title: 'View',
+    key: 'view_count',
+    value: 'view_count',
+    align: 'center',
+    sortable: true
+  },
+  {
     title: 'Actions',
     key: 'actions',
     value: 'actions',
     align: 'center',
     sortable: false
   }
-]
+] as const)
 
 function getStatusColor(item: BlogItem) {
   if (item.scheduled_at) return 'info'
@@ -372,15 +426,18 @@ function getStatusText(item: BlogItem) {
   if (item.scheduled_at) return 'Scheduled'
   return item.is_published ? 'Published' : 'Draft'
 }
-
-function formatDate(date) {
-  if (!date) return '-'
-  return new Date(date).toLocaleDateString('en-US', {
+function formatDate(date: string | undefined): string {
+  if (!date) return '-';
+  return new Date(date).toLocaleString('en-US', {
     year: 'numeric',
     month: 'short',
-    day: 'numeric'
-  })
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true, // For AM/PM format
+  });
 }
+
 
 function openDialog() {
   resetForm()
@@ -392,6 +449,21 @@ function closeDialog() {
   resetForm()
 }
 
+function handleImageUpload(event: Event) {
+  const input = event.target as HTMLInputElement
+  if (input.files && input.files[0]) {
+    const file = input.files[0]
+    form.value.image = file
+    
+    // Create preview URL
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      imagePreview.value = e.target?.result as string
+    }
+    reader.readAsDataURL(file)
+  }
+}
+
 function resetForm() {
   form.value = {
     title: '',
@@ -401,28 +473,37 @@ function resetForm() {
     content: '',
     scheduled_at: null
   }
+  imagePreview.value = null
+  isEditing.value = false
 }
 
 function submitBlog() {
-  if (!formRef.value.validate()) return
-
+  if (!formRef.value?.validate()) return
+  if (form.value.is_published) {
+    scheduleMenu.value = false
+  }
   loading.value = true
   const formData = new FormData()
   formData.append('title', form.value.title)
   formData.append('content', form.value.content)
   formData.append('category', form.value.category)
-  formData.append('is_published', form.value.is_published ? 1 : 0)
-  formData.append('user_id', user.value.id)
+  formData.append('is_published', String(form.value.is_published ? 1 : 0))
+  formData.append('user_id', String(user.value.id))
 
-  if (form.value.scheduled_at) {
+  if (form.value.scheduled_at && !form.value.is_published) {
     formData.append('scheduled_at', form.value.scheduled_at)
   }
 
+  
   if (form.value.image) {
     formData.append('image', form.value.image)
   }
 
-  axios.post('/blogs', formData)
+  axios.post('/blogs', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
     .then(() => {
       closeDialog()
       router.visit(window.location.pathname, { preserveScroll: true })

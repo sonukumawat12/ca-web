@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
-
 import DeleteUser from '@/components/DeleteUser.vue';
 import HeadingSmall from '@/components/HeadingSmall.vue';
 import InputError from '@/components/InputError.vue';
@@ -45,64 +44,74 @@ const submit = () => {
         <Head title="Profile settings" />
 
         <SettingsLayout>
-            <div class="flex flex-col space-y-6">
-                <HeadingSmall title="Profile information" description="Update your name and email address" />
+            <div class="space-y-8">
+                <div>
+                    <HeadingSmall title="Profile Information" description="Update your account’s name and email address." />
+                </div>
 
-                <form @submit.prevent="submit" class="space-y-6">
-                    <div class="grid gap-2">
-                        <Label for="name">Name</Label>
-                        <Input id="name" class="mt-1 block w-full" v-model="form.name" required autocomplete="name" placeholder="Full name" />
+                <form @submit.prevent="submit" class="grid gap-6 max-w-xl">
+                    <div>
+                        <Label for="name">Full Name</Label>
+                        <Input
+                            id="name"
+                            class="mt-2"
+                            v-model="form.name"
+                            required
+                            autocomplete="name"
+                            placeholder="Your full name"
+                        />
                         <InputError class="mt-2" :message="form.errors.name" />
                     </div>
 
-                    <div class="grid gap-2">
-                        <Label for="email">Email address</Label>
+                    <div>
+                        <Label for="email">Email Address</Label>
                         <Input
                             id="email"
                             type="email"
-                            class="mt-1 block w-full"
+                            class="mt-2"
                             v-model="form.email"
                             required
                             autocomplete="username"
-                            placeholder="Email address"
+                            placeholder="you@example.com"
                         />
                         <InputError class="mt-2" :message="form.errors.email" />
                     </div>
 
-                    <div v-if="mustVerifyEmail && !user.email_verified_at">
-                        <p class="-mt-4 text-sm text-muted-foreground">
+                    <div v-if="mustVerifyEmail && !user.email_verified_at" class="space-y-2 text-sm text-muted-foreground">
+                        <p>
                             Your email address is unverified.
                             <Link
                                 :href="route('verification.send')"
                                 method="post"
                                 as="button"
-                                class="text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500"
+                                class="text-blue-600 underline hover:text-blue-800"
                             >
-                                Click here to resend the verification email.
+                                Click here to resend verification email.
                             </Link>
                         </p>
 
-                        <div v-if="status === 'verification-link-sent'" class="mt-2 text-sm font-medium text-green-600">
-                            A new verification link has been sent to your email address.
+                        <div v-if="status === 'verification-link-sent'" class="text-green-600 font-medium">
+                            A new verification link has been sent to your email.
                         </div>
                     </div>
 
                     <div class="flex items-center gap-4">
-                        <Button :disabled="form.processing">Save</Button>
+                        <Button :disabled="form.processing" class="px-6 py-2">Save</Button>
 
                         <Transition
-                            enter-active-class="transition ease-in-out"
+                            enter-active-class="transition-opacity duration-200"
                             enter-from-class="opacity-0"
-                            leave-active-class="transition ease-in-out"
+                            leave-active-class="transition-opacity duration-200"
                             leave-to-class="opacity-0"
                         >
-                            <p v-show="form.recentlySuccessful" class="text-sm text-neutral-600">Saved.</p>
+                            <p v-show="form.recentlySuccessful" class="text-sm text-green-600">Changes saved.</p>
                         </Transition>
                     </div>
                 </form>
-            </div>
 
-            <DeleteUser />
+                <!-- Uncomment to show Delete option -->
+                <!-- <DeleteUser /> -->
+            </div>
         </SettingsLayout>
     </AppLayout>
 </template>

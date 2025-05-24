@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\FrontendController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -28,10 +29,7 @@ Route::get('/pricing', function () {
     return Inertia::render('Pricing');
 })->name('pricing');
 
-Route::get('/blog', function () {
-    return Inertia::render('Blog');
-})->name('blog');
-
+Route::get('/blog', [FrontendController::class,'index'])->name('blog');
 Route::get('/contact', function () {
     return Inertia::render('Contact');
 })->name('contact');

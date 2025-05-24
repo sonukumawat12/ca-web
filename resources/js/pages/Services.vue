@@ -147,13 +147,13 @@ const testimonials = [
                     <span>{{ feature }}</span>
                   </div>
                 </div>
-                <v-btn
+                <!-- <v-btn
                   class="service-btn"
                   variant="outlined"
                   color="primary"
                 >
                   Learn More
-                </v-btn>
+                </v-btn> -->
               </div>
             </div>
           </v-col>
