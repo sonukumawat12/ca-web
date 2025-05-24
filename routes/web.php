@@ -5,7 +5,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\BlogController;
-
+use App\Http\Controllers\DashboardController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -40,11 +40,9 @@ Route::get('/style-guide', function () {
     return Inertia::render('styles/GlobalStyles');
 })->name('style-guide');
 
-Route::get('dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/dashboard', [DashboardController::class,'index'])->name('dashboard');
     Route::get('/dashboard/blogs', [BlogController::class,'index'])->name('dashboard.blogs');
     Route::post('/blogs', [BlogController::class, 'store'])->name('blogs.store');
     Route::put('/blogs/{blog}', [BlogController::class, 'update'])->name('blogs.update');

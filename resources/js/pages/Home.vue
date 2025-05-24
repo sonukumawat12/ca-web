@@ -179,50 +179,9 @@ const reviews = [
   }
 ];
 
-const carouselRef = ref<HTMLElement | null>(null);
-let intervalId: number | null = null;
-
-const startCarousel = () => {
-  const carousel = carouselRef.value;
-  if (!carousel) return;
-  intervalId = window.setInterval(() => {
-    if (carousel.scrollLeft + carousel.offsetWidth >= carousel.scrollWidth) {
-      carousel.scrollLeft = 0;
-    } else {
-      carousel.scrollLeft += 1;
-    }
-  }, 16); // ~60fps
-};
-
-const stopCarousel = () => {
-  if (intervalId) {
-    window.clearInterval(intervalId);
-    intervalId = null;
-  }
-};
-
-const servicesCarouselRef = ref<HTMLElement | null>(null);
-
-function scrollServices(direction: number) {
-  const el = servicesCarouselRef.value;
-  if (!el) return;
-  const card = el.querySelector('.horizontal-service-card') as HTMLElement;
-  if (!card) return;
-  const scrollAmount = card.offsetWidth + 24; // 1.5rem gap
-  el.scrollBy({ left: direction * scrollAmount, behavior: 'smooth' });
-}
-
 const handleGetStarted = () => {
   window.location.href = '/contact';
 };
-
-onMounted(() => {
-  startCarousel();
-});
-
-onBeforeUnmount(() => {
-  stopCarousel();
-});
 </script>
 
 <template>
@@ -230,14 +189,14 @@ onBeforeUnmount(() => {
     <title>{{ metaTitle }}</title>
     <meta name="description" :content="metaDescription">
     <meta name="keywords" :content="metaKeywords">
-    
+
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" :content="currentUrl">
     <meta property="og:title" :content="metaTitle">
     <meta property="og:description" :content="metaDescription">
     <meta property="og:image" :content="ogImageUrl">
-    
+
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:url" :content="currentUrl">
@@ -314,30 +273,48 @@ onBeforeUnmount(() => {
     </section>
 
     <!-- 2. Services Section -->
-    <section class="services-section horizontal-services-section">
+    <section class="services-section">
       <v-container>
-        <div class="section-header">
-          <span class="section-badge">Our Services</span>
-          <h2 class="section-title">Comprehensive CA Solutions</h2>
-          <p class="section-subtitle">Expert financial services tailored to your business needs</p>
-              </div>
-        <div class="horizontal-services-carousel-wrapper">
-          <button class="carousel-arrow left" @click="scrollServices(-1)">
-            <v-icon icon="mdi-chevron-left" />
-          </button>
-          <div class="horizontal-services-carousel" ref="servicesCarouselRef" justify-content="center">
-            <div v-for="service in services" :key="service.title" class="horizontal-service-card">
-              <div class="horizontal-service-icon-bg">
-                <i :class="service.icon" class="horizontal-service-icon"></i>
+        <div class="section-header-wrapper">
+          <div class="section-header-content">
+            <div class="section-badge-wrapper">
+              <span class="section-badge">Our Services</span>
+              <div class="badge-decoration"></div>
             </div>
-              <h3 class="horizontal-service-title">{{ service.title }}</h3>
-              <p class="horizontal-service-desc">{{ service.desc }}</p>
-                </div>
+            <h2 class="section-title">
+              Comprehensive
+              <span class="gradient-text">CA Solutions</span>
+            </h2>
+            <p class="section-subtitle">
+              Expert financial services tailored to your business needs
+            </p>
+            <div class="section-decoration">
+              <div class="decoration-line"></div>
+              <div class="decoration-dot"></div>
+            </div>
+          </div>
+        </div>
+        <div class="services-grid">
+          <div v-for="service in services" :key="service.title" class="service-card">
+            <div class="service-icon-wrapper">
+              <div class="service-icon-bg">
+                <i :class="service.icon"></i>
               </div>
-          <button class="carousel-arrow right" @click="scrollServices(1)">
-            <v-icon icon="mdi-chevron-right" />
-          </button>
-                </div>
+            </div>
+            <h3 class="service-title">{{ service.title }}</h3>
+            <p class="service-description">{{ service.desc }}</p>
+            <div class="service-hover-content">
+              <v-btn
+                variant="text"
+                class="service-link"
+                color="primary"
+              >
+                Learn More
+                <v-icon end icon="mdi-arrow-right" class="ml-2"></v-icon>
+              </v-btn>
+            </div>
+          </div>
+        </div>
       </v-container>
     </section>
 
@@ -670,88 +647,194 @@ onBeforeUnmount(() => {
 /* Services Section */
 .services-section {
   padding: 96px 0;
-  background: var(--background-white);
+  background: var(--background-light);
+  position: relative;
+  overflow: hidden;
 }
-
-.section-header {
-  text-align: center;
-  margin-bottom: 64px;
-}
-
-.section-badge {
-  display: inline-block;
-  background: rgba(37,99,235,0.1);
-  color: var(--primary-color);
-  padding: 8px 16px;
-  border-radius: 32px;
-  font-weight: 600;
-  margin-bottom: 16px;
-}
-
-.section-title {
-  font-size: 40px;
-  font-weight: 800;
-  color: var(--text-primary);
-  margin-bottom: 16px;
-  }
-
-.section-subtitle {
-  font-size: 18px;
-  color: var(--text-secondary);
-  max-width: 512px;
-  margin: 0 auto;
-  }
 
 .services-grid {
-  margin-top: 32px;
-  }
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+  position: relative;
+  z-index: 1;
+}
 
 .service-card {
-  background: var(--background-white);
-  border-radius: var(--border-radius);
-  padding: 32px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 18px;
+  padding: 20px 14px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(124, 58, 237, 0.1);
+  backdrop-filter: blur(10px);
+  min-width: 0;
+}
+
+.service-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
   height: 100%;
-  transition: transform var(--transition-speed), box-shadow var(--transition-speed);
-  border: .0625rem solid rgba(37,99,235,0.1);
-  }
+  background: linear-gradient(135deg, rgba(37,99,235,0.05), rgba(124,58,237,0.05));
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
 
 .service-card:hover {
-  transform: translateY(-0.3125rem);
-  box-shadow: 0 1.25rem 2.5rem rgba(37,99,235,0.1);
-  }
+  transform: translateY(-6px);
+  box-shadow: 0 10px 24px rgba(124, 58, 237, 0.10);
+  border-color: rgba(124, 58, 237, 0.18);
+}
 
-.service-icon {
-  width: 64px;
-  height: 64px;
+.service-card:hover::before {
+  opacity: 1;
+}
+
+.service-icon-wrapper {
+  margin-bottom: 14px;
+  position: relative;
+}
+
+.service-icon-bg {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
   background: linear-gradient(135deg, rgba(37,99,235,0.1), rgba(124,58,237,0.1));
-  border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 24px;
-  }
+  transition: all 0.4s ease;
+}
 
-.service-icon i {
-  font-size: 24px;
+.service-card:hover .service-icon-bg {
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  transform: scale(1.08);
+}
+
+.service-icon-bg i {
+  font-size: 18px;
   color: var(--primary-color);
+  transition: color 0.4s ease;
+}
+
+.service-card:hover .service-icon-bg i {
+  color: white;
 }
 
 .service-title {
-  font-size: 20px;
+  font-size: 16px;
   font-weight: 700;
   color: var(--text-primary);
-  margin-bottom: 12px;
+  margin-bottom: 8px;
+  position: relative;
 }
 
 .service-description {
+  font-size: 13px;
+  line-height: 1.5;
   color: var(--text-secondary);
-  margin-bottom: 24px;
+  margin-bottom: 14px;
+}
+
+.service-hover-content {
+  opacity: 0;
+  transform: translateY(6px);
+  transition: all 0.4s ease;
+}
+
+.service-card:hover .service-hover-content {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .service-link {
-  color: var(--primary-color);
   font-weight: 600;
   padding: 0;
+  height: auto;
+  min-height: 0;
+  font-size: 13px;
+}
+
+.service-link:hover {
+  background: transparent;
+}
+
+@media (max-width: 960px) {
+  .services-section {
+    padding: 64px 0;
+  }
+  .services-grid {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 14px;
+    padding: 0 8px;
+  }
+  .service-card {
+    padding: 16px 8px;
+    text-align: center;
+  }
+  .service-icon-wrapper {
+    margin: 0 auto 10px;
+  }
+  .service-icon-bg {
+    width: 32px;
+    height: 32px;
+    margin: 0 auto;
+  }
+  .service-title {
+    font-size: 14px;
+    text-align: center;
+  }
+  .service-description {
+    font-size: 12px;
+    text-align: center;
+    max-width: 180px;
+    margin: 0 auto 10px;
+  }
+  .service-hover-content {
+    display: flex;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 600px) {
+  .services-section {
+    padding: 36px 0;
+  }
+  .services-grid {
+    grid-template-columns: 1fr;
+    max-width: 220px;
+    margin: 0 auto;
+    gap: 10px;
+  }
+  .service-card {
+    padding: 10px 4px;
+    background: rgba(255, 255, 255, 0.97);
+  }
+  .service-icon-bg {
+    width: 28px;
+    height: 28px;
+  }
+  .service-icon-bg i {
+    font-size: 14px;
+  }
+  .service-title {
+    font-size: 13px;
+  }
+  .service-description {
+    font-size: 11px;
+    max-width: 150px;
+  }
+  .service-hover-content {
+    opacity: 1;
+    transform: none;
+  }
+  .service-link {
+    font-size: 12px;
+  }
 }
 
 /* About Section */
@@ -1524,6 +1607,140 @@ onBeforeUnmount(() => {
     max-width: 320px;
     width: 100%;
     margin: 0 auto;
+  }
+}
+
+/* Services Section Header Styles */
+.section-header-wrapper {
+  position: relative;
+  margin-bottom: 64px;
+  text-align: center;
+  padding: 0 24px;
+}
+
+.section-header-content {
+  max-width: 800px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.section-badge-wrapper {
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+  margin-bottom: 24px;
+}
+
+.section-badge {
+  background: linear-gradient(135deg, rgba(37,99,235,0.1), rgba(124,58,237,0.1));
+  color: var(--primary-color);
+  padding: 8px 20px;
+  border-radius: 32px;
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: 0.5px;
+  position: relative;
+  z-index: 1;
+  border: 1px solid rgba(124,58,237,0.1);
+  backdrop-filter: blur(8px);
+}
+
+.badge-decoration {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(37,99,235,0.1), rgba(124,58,237,0.1));
+  border-radius: 32px;
+  filter: blur(8px);
+  transform: scale(1.1);
+  z-index: 0;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.section-title {
+  font-size: 48px;
+  font-weight: 800;
+  line-height: 1.2;
+  color: var(--text-primary);
+  margin-bottom: 24px;
+  letter-spacing: -0.02em;
+}
+
+.section-title .gradient-text {
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  position: relative;
+  display: inline-block;
+}
+
+.section-subtitle {
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  max-width: 600px;
+  margin: 0 auto 32px;
+}
+
+.section-decoration {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 32px;
+}
+
+.decoration-line {
+  width: 60px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--primary-color), transparent);
+}
+
+.decoration-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--primary-color);
+  border-radius: 50%;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+}
+
+@media (max-width: 960px) {
+  .section-title {
+    font-size: 40px;
+  }
+
+  .section-subtitle {
+    font-size: 17px;
+  }
+}
+
+@media (max-width: 600px) {
+  .section-header-wrapper {
+    margin-bottom: 48px;
+  }
+
+  .section-title {
+    font-size: 32px;
+  }
+
+  .section-subtitle {
+    font-size: 16px;
+  }
+
+  .section-badge {
+    font-size: 14px;
+    padding: 6px 16px;
   }
 }
 </style>

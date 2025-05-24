@@ -25,14 +25,6 @@ const page = usePage<SharedData>();
                     </Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton as-child :is-active="page.url === '/dashboard/blogs'" tooltip="Blog">
-                    <Link href="/dashboard/blogs">
-                        <span class="mr-2">📝</span>
-                        <span>Blog</span>
-                    </Link>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
         </SidebarMenu>
     </SidebarGroup>
 </template>

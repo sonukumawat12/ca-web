@@ -8,15 +8,22 @@ use App\Models\Blog;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
-
+use App\Traits\BlogCategoryTrait;
 
 class BlogController extends Controller
 {
+    use BlogCategoryTrait;
+
     public function index()
     {
-        $blogs = Blog::latest()->get();  
+        $blogs = Blog::latest()->get();
         $user = Auth::user();
-        return Inertia::render('dashboard/BlogManagement', ['blogs' => $blogs, 'user' => $user]);
+        $categories = self::getCategories();
+        return Inertia::render('dashboard/BlogManagement', [
+            'blogs' => $blogs,
+            'user' => $user,
+            'categories' => $categories
+        ]);
     }
 
     public function store(Request $request)
@@ -67,7 +74,7 @@ class BlogController extends Controller
         if ($blog->image) {
             Storage::disk('public')->delete($blog->image);
         }
-        
+
         $blog->delete();
 
         return redirect()->back()->with('success', 'Blog deleted successfully');
@@ -83,4 +90,4 @@ class BlogController extends Controller
 
         return redirect()->back()->with('success', 'Blog scheduled successfully');
     }
-} 
+}
