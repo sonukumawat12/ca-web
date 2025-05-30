@@ -134,7 +134,7 @@ const toggleFaq = (index: number) => {
         </div>
         <div class="pricing-cards-container">
           <div
-            v-for="plan in pricingPlans"
+            v-for="plan in pricingPlans" 
             :key="plan.name"
             class="pricing-card"
             :class="{ 'popular': plan.popular }"

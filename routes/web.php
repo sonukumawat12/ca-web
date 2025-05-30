@@ -7,6 +7,8 @@ use Inertia\Inertia;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FrontendController;
+use App\Http\Controllers\TeamController;
+use App\Http\Controllers\TestimonialController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -46,6 +48,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('/blogs/{blog}', [BlogController::class, 'update'])->name('blogs.update');
     Route::delete('/blogs/{blog}', [BlogController::class, 'destroy'])->name('blogs.destroy');
     Route::put('/blogs/{blog}/schedule', [BlogController::class, 'schedule'])->name('blogs.schedule');
+
+    // Team Management Routes
+    Route::get('/dashboard/teams', [TeamController::class, 'index'])->name('dashboard.teams');
+    Route::post('/teams', [TeamController::class, 'store'])->name('teams.store');
+    Route::put('/teams/{team}', [TeamController::class, 'update'])->name('teams.update');
+    Route::delete('/teams/{team}', [TeamController::class, 'destroy'])->name('teams.destroy');
+
+    // Testimonial Management Routes
+    Route::get('/dashboard/testimonials', [TestimonialController::class, 'index'])->name('dashboard.testimonials');
+    Route::post('/testimonials', [TestimonialController::class, 'store'])->name('testimonials.store');
+    Route::put('/testimonials/{testimonial}', [TestimonialController::class, 'update'])->name('testimonials.update');
+    Route::delete('/testimonials/{testimonial}', [TestimonialController::class, 'destroy'])->name('testimonials.destroy');
 });
 
    // Route::get('/dashboard/blogs', function () {

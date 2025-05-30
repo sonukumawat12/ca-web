@@ -32,10 +32,10 @@
             }"
           >
             <!-- Image Column -->
-             
+
             <template v-slot:item.image="scope">
               <v-avatar size="40" class="my-2">
-                
+
                 <img :src="scope.item.image" />
               </v-avatar>
             </template>
@@ -230,23 +230,11 @@
                           :close-on-content-click="false"
                           transition="scale-transition"
                         >
-                          <template v-slot:activator="{ props }">
-                            <v-text-field
-                              v-bind="props"
-                              v-model="form.scheduled_at"
-                              label="Publication Date"
-                              prepend-inner-icon="mdi-calendar"
-                              variant="outlined"
-                              density="comfortable"
-                              readonly
-                              class="mb-2"
-                              hide-details="auto"
-                            />
+                          <template >
+                            <input type="date" v-model="form.scheduled_at" />
+                            <input type="time" v-model="form.scheduled_time" />
                           </template>
-                          <v-date-picker
-                            v-model="form.scheduled_at"
-                            :min="new Date().toISOString().substr(0, 10)"
-                          />
+
                         </v-menu>
                       </template>
                     </v-card-text>
@@ -318,6 +306,7 @@ interface FormData {
   image: File | null
   content: string
   scheduled_at: string | null
+  scheduled_time: string | null
 }
 
 const user = computed<User>(() => usePage().props.user as User)
@@ -338,7 +327,8 @@ const form = ref<FormData>({
   is_published: false,
   image: null,
   content: '',
-  scheduled_at: null
+  scheduled_at: null,
+  scheduled_time: null
 })
 
 const headers = ref<readonly DataTableHeader[]>([
@@ -364,9 +354,16 @@ const headers = ref<readonly DataTableHeader[]>([
     sortable: true
   },
   {
-    title: 'excerpt',
+    title: 'Excerpt',
     key: 'excerpt',
     value: 'excerpt',
+    align: 'center',
+    sortable: true
+  },
+  {
+    title: 'Content',
+    key: 'content',
+    value: 'content',
     align: 'center',
     sortable: true
   },
@@ -377,13 +374,7 @@ const headers = ref<readonly DataTableHeader[]>([
     align: 'center',
     sortable: true
   },
-  {
-    title: 'Published Date',
-    key: 'published_at',
-    value: 'published_at',
-    align: 'center',
-    sortable: true
-  },
+
   {
     title: 'Read Time',
     key: 'total_read_time',
@@ -395,6 +386,13 @@ const headers = ref<readonly DataTableHeader[]>([
     title: 'View',
     key: 'view_count',
     value: 'view_count',
+    align: 'center',
+    sortable: true
+  },
+  {
+    title: 'Published Date',
+    key: 'published_at',
+    value: 'published_at',
     align: 'center',
     sortable: true
   },
@@ -454,7 +452,7 @@ function handleImageUpload(event: Event) {
   if (input.files && input.files[0]) {
     const file = input.files[0]
     form.value.image = file
-    
+
     // Create preview URL
     const reader = new FileReader()
     reader.onload = (e) => {
@@ -494,7 +492,7 @@ function submitBlog() {
     formData.append('scheduled_at', form.value.scheduled_at)
   }
 
-  
+
   if (form.value.image) {
     formData.append('image', form.value.image)
   }

@@ -11,7 +11,7 @@ const menuItems = [
   { title: 'Pricing', icon: 'mdi-currency-usd', route: route('pricing') },
   { title: 'Blog', icon: 'mdi-post', route: route('blog') },
   { title: 'Contact', icon: 'mdi-email', route: route('contact') },
-  { title: 'Style Guide', icon: 'mdi-palette', route: route('style-guide') }
+//   { title: 'Style Guide', icon: 'mdi-palette', route: route('style-guide') }
 ]
 </script>
 

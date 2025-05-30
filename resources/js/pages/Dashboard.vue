@@ -145,142 +145,143 @@ const recentLeads = [
   }
 ];
 
-
-
 const capitalizeFirst = (str: string) => {
   if (!str) return '';
   return str.split(' ')
     .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(' ');
 }
-
-
 </script>
 
 <template>
   <Head title="Dashboard" />
 
   <AppLayout :breadcrumbs="breadcrumbs">
-    <v-container fluid class="py-8">
-      <!-- Welcome Section with Quick Actions -->
-      <v-row class="mb-8">
-        <v-col cols="12" md="8">
-          <div class="text-h4 font-weight-bold mb-2">
-          Welcome back, {{ capitalizeFirst(authUser.name) }}!
-        </div>
-
-          <div class="text-subtitle-1 text-grey-darken-1">Here's what's happening with your content and team today.</div>
-        </v-col>
-        <v-col cols="12" md="4" class="d-flex align-center justify-end">
-          <v-btn
-            color="primary"
-            prepend-icon="mdi-plus"
-            class="text-none mr-2"
-            elevation="0"
-          >
-            New Post
-          </v-btn>
-          <v-btn
-            color="primary"
-            variant="outlined"
-            prepend-icon="mdi-account-plus"
-            class="text-none"
-            elevation="0"
-          >
-            Add Lead
-          </v-btn>
-        </v-col>
-      </v-row>
-
-      <!-- Quick Stats Cards -->
-      <v-row dense>
-        <v-col v-for="(item, index) in stats" :key="index" cols="12" md="4">
-          <v-card class="d-flex flex-column pa-6 rounded-lg" :color="`${item.color}-lighten-5`" elevation="0">
+    <v-container fluid class="pa-4">
+      <!-- Top Section with Welcome and Quick Stats -->
+      <v-row>
+        <!-- Welcome Card -->
+        <v-col cols="12" md="4">
+          <v-card class="welcome-card pa-4 rounded-xl">
             <div class="d-flex align-center mb-4">
-              <v-avatar size="56" :color="item.color" class="elevation-2">
-                <v-icon size="28" color="white">{{ item.icon }}</v-icon>
+              <v-avatar size="56" class="mr-3 gradient-avatar">
+                <span class="text-h5 text-white">{{ authUser.name.charAt(0) }}</span>
               </v-avatar>
-              <div class="ml-6">
-                <div class="text-subtitle-2 font-weight-medium text-grey-darken-2">{{ item.title }}</div>
-                <div class="text-h4 font-weight-bold">{{ item.value }}</div>
+              <div>
+                <div class="text-h5 font-weight-bold text-white">Welcome back,</div>
+                <div class="text-h6 text-white">{{ capitalizeFirst(authUser.name) }}</div>
               </div>
             </div>
-            <div class="d-flex align-center">
-              <v-chip
-                size="small"
-                :color="item.color"
+            <v-divider class="mb-4" color="rgba(255,255,255,0.2)"></v-divider>
+            <div class="d-flex gap-2">
+              <v-btn
+                color="white"
                 variant="flat"
-                class="mr-2"
+                prepend-icon="mdi-plus"
+                class="text-none"
+                size="small"
               >
-                {{ item.trend }}
-              </v-chip>
-              <span class="text-caption text-grey-darken-1">{{ item.description }}</span>
-              <v-spacer></v-spacer>
-              <div class="d-flex align-center">
-                <v-icon
-                  :color="item.changeType === 'increase' ? 'success' : 'error'"
-                  size="small"
-                  class="mr-1"
-                >
-                  {{ item.changeType === 'increase' ? 'mdi-trending-up' : 'mdi-trending-down' }}
-                </v-icon>
-                <span :class="`text-caption font-weight-medium ${item.changeType === 'increase' ? 'text-success' : 'text-error'}`">
-                  {{ item.change }}
-                </span>
-              </div>
+                New Post
+              </v-btn>
+              <v-btn
+                color="white"
+                variant="outlined"
+                prepend-icon="mdi-bell"
+                class="text-none"
+                size="small"
+              >
+                Notifications
+              </v-btn>
             </div>
           </v-card>
+        </v-col>
+
+        <!-- Quick Stats -->
+        <v-col cols="12" md="8">
+          <v-row dense>
+            <v-col v-for="(item, index) in stats" :key="index" cols="12" sm="6" md="4">
+              <v-card class="stat-card pa-4 rounded-xl" :class="`${item.color}-lighten-5`">
+                <div class="d-flex align-center">
+                  <div class="stat-icon mr-3" :class="item.color">
+                    <v-icon :color="item.color">{{ item.icon }}</v-icon>
+                  </div>
+                  <div>
+                    <div class="text-subtitle-2 font-weight-medium text-grey-darken-2">{{ item.title }}</div>
+                    <div class="text-h5 font-weight-bold">{{ item.value }}</div>
+                  </div>
+                </div>
+                <div class="d-flex align-center mt-3">
+                  <v-chip
+                    size="x-small"
+                    :color="item.color"
+                    variant="flat"
+                    class="mr-2"
+                  >
+                    {{ item.trend }}
+                  </v-chip>
+                  <span class="text-caption text-grey-darken-1">{{ item.description }}</span>
+                </div>
+              </v-card>
+            </v-col>
+          </v-row>
         </v-col>
       </v-row>
 
       <!-- Main Content Area -->
-      <v-row class="mt-8" dense>
+      <v-row class="mt-4">
         <!-- Recent Blogs -->
-        <v-col cols="12" md="6">
-          <v-card elevation="0" class="rounded-lg">
-            <v-card-title class="d-flex align-center pa-6 pb-2">
-              <span class="text-h6 font-weight-bold">Recent Blogs</span>
+        <v-col cols="12" lg="8">
+          <v-card class="content-card rounded-xl">
+            <v-card-title class="d-flex align-center pa-4">
+              <div class="d-flex align-center">
+                <div class="section-icon mr-3">
+                  <v-icon color="white">mdi-post</v-icon>
+                </div>
+                <span class="text-h6 font-weight-bold">Recent Blogs</span>
+              </div>
               <v-spacer></v-spacer>
               <v-btn
-                variant="text"
-                color="indigo"
-                prepend-icon="mdi-plus"
+                variant="flat"
+                color="primary"
                 class="text-none"
+                prepend-icon="mdi-plus"
+                size="small"
               >
-                New Post
+                New Blog
               </v-btn>
             </v-card-title>
+            <v-divider></v-divider>
             <v-list class="pa-2">
               <v-list-item
                 v-for="blog in recentBlogs"
                 :key="blog.id"
-                class="mb-2 rounded-lg"
-                color="indigo-lighten-5"
+                class="blog-item mb-2 rounded-lg"
+                hover
               >
                 <template v-slot:prepend>
                   <v-img
                     :src="blog.image"
-                    width="80"
+                    width="100"
                     height="60"
-                    class="rounded-lg mr-4"
+                    class="rounded-lg mr-3"
                     cover
                   ></v-img>
                 </template>
-                <v-list-item-title class="font-weight-medium mb-1">{{ blog.title }}</v-list-item-title>
+                <v-list-item-title class="text-subtitle-1 font-weight-medium mb-1">{{ blog.title }}</v-list-item-title>
                 <v-list-item-subtitle class="d-flex align-center flex-wrap">
-                  <span class="mr-4 d-flex align-center">
-                    <v-avatar size="24" color="grey-lighten-3" class="mr-2">
-                      <span class="text-caption">{{ blog.author.charAt(0) }}</span>
+                  <div class="d-flex align-center mr-4">
+                    <v-avatar size="24" color="primary" class="mr-1">
+                      <span class="text-caption text-white">{{ blog.author.charAt(0) }}</span>
                     </v-avatar>
-                    {{ capitalizeFirst(blog.author) }}
-                  </span>
-                  <span class="mr-4 d-flex align-center">
+                    <span class="text-caption">{{ capitalizeFirst(blog.author) }}</span>
+                  </div>
+                  <div class="d-flex align-center mr-4">
                     <v-icon size="small" class="mr-1">mdi-eye</v-icon>
-                    {{ blog.views }}
-                  </span>
+                    <span class="text-caption">{{ blog.views }}</span>
+                  </div>
                   <v-chip
                     size="x-small"
-                    color="indigo"
+                    color="primary"
                     variant="flat"
                     class="mr-2"
                   >
@@ -295,38 +296,45 @@ const capitalizeFirst = (str: string) => {
         </v-col>
 
         <!-- Team Members -->
-        <v-col cols="12" md="6">
-          <v-card elevation="0" class="rounded-lg">
-            <v-card-title class="d-flex align-center pa-6 pb-2">
-              <span class="text-h6 font-weight-bold">Team Members</span>
+        <v-col cols="12" lg="4">
+          <v-card class="content-card rounded-xl">
+            <v-card-title class="d-flex align-center pa-4">
+              <div class="d-flex align-center">
+                <div class="section-icon mr-3">
+                  <v-icon color="white">mdi-account-group</v-icon>
+                </div>
+                <span class="text-h6 font-weight-bold">Team Members</span>
+              </div>
               <v-spacer></v-spacer>
               <v-btn
-                variant="text"
-                color="teal"
-                prepend-icon="mdi-account-plus"
+                variant="flat"
+                color="primary"
                 class="text-none"
+                prepend-icon="mdi-account-plus"
+                size="small"
               >
                 Add Member
               </v-btn>
             </v-card-title>
+            <v-divider></v-divider>
             <v-list class="pa-2">
               <v-list-item
                 v-for="member in teamMembers"
                 :key="member.name"
-                class="mb-2 rounded-lg"
-                color="teal-lighten-5"
+                class="team-item mb-2 rounded-lg"
+                hover
               >
                 <template v-slot:prepend>
-                  <v-avatar :color="member.status === 'Online' ? 'teal' : 'grey'" size="40">
-                    <span class="text-white">{{ member.avatar }}</span>
+                  <v-avatar :color="member.status === 'Online' ? 'success' : 'grey'" size="40">
+                    <span class="text-white text-subtitle-2">{{ member.avatar }}</span>
                   </v-avatar>
                 </template>
-                <v-list-item-title class="font-weight-medium mb-1">{{ member.name }}</v-list-item-title>
+                <v-list-item-title class="text-subtitle-1 font-weight-medium mb-1">{{ member.name }}</v-list-item-title>
                 <v-list-item-subtitle class="d-flex align-center flex-wrap">
-                  <span class="mr-4">{{ member.role }}</span>
+                  <span class="text-caption mr-3">{{ member.role }}</span>
                   <v-chip
                     size="x-small"
-                    :color="member.status === 'Online' ? 'teal' : 'grey'"
+                    :color="member.status === 'Online' ? 'success' : 'grey'"
                     variant="flat"
                     class="mr-2"
                   >
@@ -340,19 +348,21 @@ const capitalizeFirst = (str: string) => {
                   >
                     {{ member.availability }}
                   </v-chip>
-                  <div class="d-flex align-center mt-1">
+                </v-list-item-subtitle>
+                <template v-slot:append>
+                  <div class="d-flex">
                     <v-chip
                       v-for="skill in member.skills"
                       :key="skill"
                       size="x-small"
                       color="grey"
                       variant="flat"
-                      class="mr-1"
+                      class="ml-1"
                     >
                       {{ skill }}
                     </v-chip>
                   </div>
-                </v-list-item-subtitle>
+                </template>
               </v-list-item>
             </v-list>
           </v-card>
@@ -360,19 +370,26 @@ const capitalizeFirst = (str: string) => {
 
         <!-- Recent Leads -->
         <v-col cols="12">
-          <v-card elevation="0" class="rounded-lg">
-            <v-card-title class="d-flex align-center pa-6 pb-2">
-              <span class="text-h6 font-weight-bold">Recent Leads</span>
+          <v-card class="content-card rounded-xl">
+            <v-card-title class="d-flex align-center pa-4">
+              <div class="d-flex align-center">
+                <div class="section-icon mr-3">
+                  <v-icon color="white">mdi-account-multiple</v-icon>
+                </div>
+                <span class="text-h6 font-weight-bold">Recent Leads</span>
+              </div>
               <v-spacer></v-spacer>
               <v-btn
-                variant="text"
-                color="orange"
-                prepend-icon="mdi-account-plus"
+                variant="flat"
+                color="primary"
                 class="text-none"
+                prepend-icon="mdi-account-plus"
+                size="small"
               >
                 Add Lead
               </v-btn>
             </v-card-title>
+            <v-divider></v-divider>
             <v-data-table
               :headers="[
                 { title: 'Company', key: 'company' },
@@ -386,13 +403,14 @@ const capitalizeFirst = (str: string) => {
               :items="recentLeads"
               hide-default-footer
               class="elevation-0"
-              density="comfortable"
+              density="compact"
             >
               <template v-slot:[`item.status`]="{ item }">
                 <v-chip
-                  size="small"
-                  :color="item.status === 'New' ? 'orange' : item.status === 'Contacted' ? 'blue' : 'green'"
+                  size="x-small"
+                  :color="item.status === 'New' ? 'warning' : item.status === 'Contacted' ? 'info' : 'success'"
                   variant="flat"
+                  class="font-weight-medium"
                 >
                   {{ item.status }}
                 </v-chip>
@@ -404,3 +422,90 @@ const capitalizeFirst = (str: string) => {
     </v-container>
   </AppLayout>
 </template>
+
+<style scoped>
+.welcome-card {
+  background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
+  color: white;
+}
+
+.gradient-avatar {
+  background: linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%);
+}
+
+.section-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
+}
+
+.stat-card {
+  transition: transform 0.2s ease;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+}
+
+.stat-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.content-card {
+  background: white;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.blog-item, .team-item {
+  transition: all 0.2s ease;
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.blog-item:hover, .team-item:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.gap-2 {
+  gap: 8px;
+}
+
+/* Dark mode support */
+:deep(.v-theme--dark) .welcome-card {
+  background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+}
+
+:deep(.v-theme--dark) .content-card {
+  background: #1E1E1E;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+:deep(.v-theme--dark) .blog-item,
+:deep(.v-theme--dark) .team-item {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+:deep(.v-theme--dark) .blog-item:hover,
+:deep(.v-theme--dark) .team-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+:deep(.v-theme--dark) .stat-icon {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+:deep(.v-theme--dark) .stat-card {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+</style>

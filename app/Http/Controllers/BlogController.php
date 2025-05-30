@@ -28,6 +28,7 @@ class BlogController extends Controller
 
     public function store(Request $request)
     {
+        dd($request->all());
         $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required|string',
@@ -58,7 +59,7 @@ class BlogController extends Controller
                 if ($blog->image) {
                     Storage::disk('public')->delete($blog->image);
                 }
-                
+
                 // Store new image
                 $imagePath = $request->file('image')->store('blog-images', 'public');
                 $fullPath = config('app.url') . '/storage/' . $imagePath;
@@ -100,7 +101,7 @@ class BlogController extends Controller
                 if ($blog->image) {
                     Storage::disk('public')->delete($blog->image);
                 }
-                
+
                 // Store new image
                 $imagePath = $request->file('image')->store('blog-images', 'public');
                 $blog->image = $imagePath;
@@ -123,9 +124,9 @@ class BlogController extends Controller
             if ($blog->image) {
                 Storage::disk('public')->delete($blog->image);
             }
-            
+
             $blog->delete();
-            
+
             return redirect()->back()->with('success', 'Blog post deleted successfully.');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Failed to delete blog post. Please try again.');

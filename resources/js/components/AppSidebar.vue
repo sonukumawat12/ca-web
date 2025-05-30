@@ -19,6 +19,16 @@ const mainNavItems: NavItem[] = [
         href: '/dashboard/blogs',
         icon: Newspaper,
     },
+    {
+        title: 'Team Management',
+        href: '/dashboard/teams',
+        icon: Newspaper,
+    },
+    {
+        title: 'Testimonial Management',
+        href: '/dashboard/testimonials',
+        icon: Newspaper,
+    },
 ];
 
 const footerNavItems: NavItem[] = [
